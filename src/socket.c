@@ -1,4 +1,4 @@
-/ includes
+// includes
 #include <arpa/inet.h>
 #include <netinet/in.h>
 #include <stdio.h>
@@ -14,9 +14,7 @@ char IP[16];
 void host_init() {
   // Create socket, binding, reuse if using, listen to clients
   sock = socket(AF_INET, SOCK_STREAM, 0);
-  if (sock < 0) {
-    perror("socket");
-  }
+  if (sock < 0) perror("socket"); 
   printf("socket created\n");
 
   int opt = 1;
@@ -26,22 +24,16 @@ void host_init() {
   serv.sin_family = AF_INET;
   serv.sin_port = htons(8080);
   serv.sin_addr.s_addr = INADDR_ANY;
-  if (bind(sock, (struct sockaddr *)&serv, sizeof(serv)) < 0) {
-    perror("bind");
-  }
+  if (bind(sock, (struct sockaddr *)&serv, sizeof(serv)) < 0) perror("bind"); 
   printf("binded to port 8080\n");
 
-  if (listen(sock, 5) < 0) {
-    perror("listen");
-  }
+  if (listen(sock, 5) < 0) perror("listen");
   printf("waiting for someone to join\n");
   struct sockaddr_in client;
   socklen_t clen = sizeof(client);
   client_sock = accept(sock, (struct sockaddr *)&client, &clen);
   printf("Joined\n");
-  if (client_sock < 0) {
-    perror("client_socket");
-  }
+  if (client_sock < 0) perror("client_socket");
 }
 
 void join_init() {
@@ -49,12 +41,15 @@ void join_init() {
   sock = socket(AF_INET, SOCK_STREAM, 0);
 
   // Server address
+  join:
+  printf("Enter the host's ip:\n");
   scanf("%15s",IP);
   struct sockaddr_in serv;
   serv.sin_family = AF_INET;
   serv.sin_port = htons(8080);
   if(inet_pton(AF_INET, IP, &serv.sin_addr)<=0){
-	  perror("invalid ip address");
+    printf("invalid ip address \n"); 
+    goto join;
   }
 
   // Connect

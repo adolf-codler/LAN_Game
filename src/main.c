@@ -1,20 +1,20 @@
 // includes
 #include "../includes/ship.h"
 #include "../includes/socket.h"
-#include <arpa/inet.h>
-#include <fcntl.h>
-#include <netinet/in.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <sys/socket.h>
-#include <termios.h>
-#include <time.h>
-#include <unistd.h>
+#include <arpa/inet.h>	// used for conversions
+#include <fcntl.h>	// files, non blocking I/O
+#include <netinet/in.h>	// address and protocol structures
+#include <stdio.h>	// files, input and output
+#include <stdlib.h>	// utility
+#include <string.h>	// working with strings
+#include <sys/socket.h>	// working with socket
+#include <termios.h>	// terminal control
+#include <time.h>	// self explanatory
+#include <unistd.h>	//file, i/o, sleeping, pipes
 
 // main function
 int main() {
-  // initialization of the game
+  // initialization of the connection 
   char room;
   do {
     printf("type h for host or j for join.(lower case)\n");
@@ -34,7 +34,7 @@ int main() {
   char move;
   char arro[14][14];
 
-  // creating board
+  // creating your board and board for reference on which you attack
   char arr1[14][14];
   for (int i = 0; i < 14; i++) {
     for (int j = 0; j < 14; j++) {
@@ -53,23 +53,11 @@ int main() {
 
   // sending your and fetching opponent ship placement
   if (room == 'h') {
-    if (send(client_sock, arr1, sizeof(arr1), 0) < 0) {
-      perror("send");
-    }
-    printf("sent\n");
-    if (recv(client_sock, arro, sizeof(arro), 0) < 0) {
-      perror("recv");
-    }
-    printf("recv\n");
+    if (send(client_sock, arr1, sizeof(arr1), 0) < 0) perror("send"); 
+    if (recv(client_sock, arro, sizeof(arro), 0) < 0) perror("recv");
   } else {
-    if (recv(sock, arro, sizeof(arro), 0) < 0) {
-      perror("recv");
-    }
-    printf("recv\n");
-    if (send(sock, arr1, sizeof(arr1), 0) < 0) {
-      perror("send");
-    }
-    printf("sent\n");
+    if (recv(sock, arro, sizeof(arro), 0) < 0) perror("recv");
+    if (send(sock, arr1, sizeof(arr1), 0) < 0) perror("send");
   }
 
   //  main loop 2 attack phase (phase-2)
