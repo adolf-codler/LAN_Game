@@ -1,8 +1,9 @@
 #include "../includes/ship.h"
 #include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
 
 void rendering(char arr[14][14]) {
-  // printf("\033[1;1H\033[2J");//clears the terminal screen
   printf("  ");
   for (int i = 0; i < 14; i++) {
     printf("%2d ", i);
@@ -18,77 +19,86 @@ void rendering(char arr[14][14]) {
 }
 
 void place(char arr[14][14]) {
-  char *arrc[7] = {"WarShip(6)", "BattleShip(5)", "Ship(3)", "Ship(3)",
-                   "Ship(3)",    "Boat(2)",       "Boat(2)"};
-  int arri[7] = {6, 5, 3, 3, 3, 2, 2};
-  for (int i = 0; i < 2; i++) {
+printf("ENTERED place()\n");
+  // variables and misc.
+  char *ships_name[6] = {"WarShip(6)", "BattleShip(5)", "Submarine(4)", "Ship(3)", "Boat(2)", "Boat(2)"};
+  int ships_size[6] = {6, 5, 4, 3, 2, 2};
+  printf("Type X, Y co-ordinates and orientation for all the ships with a space in between: \n");
+  char *error="";
+  for (int i = 0; i < 6; i++) {
+printf("loop i = %d\n", i);
+    if(error[0]!='\0') printf("%s \n",error);
+    error = "";
     rendering(arr);
 
     // getting placement
+    char place_coords[128];
+if (fgets(place_coords, sizeof(place_coords), stdin) == NULL) {
+    perror("fgets");
+    printf("EOF = %d, ERR = %d\n", feof(stdin), ferror(stdin));
+    exit(1);
+}
+
+printf("Got: '%s'\n", place_coords);
     int a, b;
-    char ori;
-    printf("starting cordinates of %s (closer to origin)\n", arrc[i]);
-    printf("X cordinates :");
-    scanf("%d", &a);
-    printf("Y cordinates :");
-    scanf("%d", &b);
-    if (a < 0 || a >= 14 || b < 0 || b >= 14) {
-      printf("Invalid coordinate. Try again.\n");
+    char orientation;
+int n = sscanf(place_coords, "%d %d %c", &a, &b, &orientation);
+printf("n=%d a=%d b=%d orientation=%c\n", n, a, b, orientation);
+
+    // validating inputs
+    if (a < 0 || a >= 14 || b < 0 || b >= 14 ) {
+      error = "Invalid co-ordinates. Try again.";
       i--; // repeat this ship
       continue;
     }
-    printf("Orientation of the %s ('h' for horizontal or 'v' for vertical) :\n",
-           arrc[i]);
-    scanf(" %c", &ori);
+    if(orientation!='v' && orientation!='h'){
+      error = "Invalid orientation. Try again.";
+      i--;
+      continue;
+    }
 
     // checking boundaries
-    if ((arri[i] + a - 1) > 13 || (arri[i] + b - 1) > 13) {
-      printf("Ship is out of boundaries. Try again.\n");
+    if ((ships_size[i] + a - 1) > 13 || (ships_size[i] + b - 1) > 13) {
+      error = "Ship is out of boundaries. Try again.";
       i--;
       continue;
     }
 
     // placing
-    if (ori == 'v') {
-      for (int j = b; j < (arri[i] + b); j++) {
+    if (orientation == 'v') {
+      for (int j = b; j < (ships_size[i] + b); j++) {
         // checking overlap
         if (arr[j][a] == 'O') {
-          printf("A ship is already there. Try again. \n");
+          error = "A ship is already there. Try again.";
           i--;
           break;
         }
         arr[j][a] = 'O';
       }
 
-    } else if (ori == 'h') {
-      for (int j = a; j < (arri[i] + a); j++) {
+    } else{
+      for (int j = a; j < (ships_size[i] + a); j++) {
         if (arr[b][j] == 'O') {
-          printf("A ship is already there. Try again. \n");
+          error = "A ship is already there. Try again.";
           i--;
           break;
         }
         arr[b][j] = 'O';
       }
 
-    } else {
-      printf("Invalid orientation. Try again.\n");
-      i--;
-      continue;
-    }
+    } 
   }
 }
 
-void attack(char arr_ref[14][14], char arr_opp[14][14]) {
+void attack(char arr_ref[14][14], char* coords) {
   int a, b;
-  printf("X cordinates of attack:");
-  scanf("%d", &a);
-  printf("Y cordinates of attack:");
-  scanf("%d", &b);
+  sscanf(coords, "%d %d", &a, &b);
+
   if (a < 0 || a >= 14 || b < 0 || b >= 14) {
     printf("Invalid coordinates. Try again.\n");
     return;
   }
-  if (arr_opp[b][a] == 'O') {
+  if (b+a == 'O') {
     printf("Its a HIT!\n");
     arr_ref[b][a] = '+';
   } else {

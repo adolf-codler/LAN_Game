@@ -14,56 +14,64 @@
 
 // main function
 int main() {
+  printf("=== PROGRAM START ===\n");
+  fflush(stdout);
+  // --- Phase-1 ---
+  printf("\033[1;1H\033[2J");  //clears the terminal screen
   // initialization of the connection 
   char room;
   do {
     printf("type h for host or j for join.(lower case)\n");
     scanf(" %c", &room);
-    if (room == 'h') {
-      host_init();
-    } else if (room == 'j') {
-      join_init();
-    } else {
-      printf("Type a valid character\n");
-    }
+    if (room == 'h') host_init();
+    else if (room == 'j') join_init();
+    else printf("Type a valid character\n");
   } while (room != 'j' && room != 'h');
 
   // variables
+  int turn = 0;
   int attacking = 1;
   int placing = 1;
   char move;
   char arro[14][14];
 
   // creating your board and board for reference on which you attack
-  char arr1[14][14];
+  char your_placement[14][14];
   for (int i = 0; i < 14; i++) {
     for (int j = 0; j < 14; j++) {
-      arr1[i][j] = '.';
+      your_placement[i][j] = '.';
     }
   }
-  char arrr[14][14];
+  char reference[14][14];
   for (int i = 0; i < 14; i++) {
     for (int j = 0; j < 14; j++) {
-      arrr[i][j] = '.';
+      reference[i][j] = '.';
     }
   }
 
-  // main loop 1 ship placement (phase-1)
-  place(arr1);
+  // --- Phase-2 ---
+  printf("\033[1;1H\033[2J"); 
+  // main loop 1 ship placement 
+  place(your_placement);
 
   // sending your and fetching opponent ship placement
   if (room == 'h') {
-    if (send(client_sock, arr1, sizeof(arr1), 0) < 0) perror("send"); 
+    if (send(client_sock, your_placement, sizeof(your_placement), 0) < 0) perror("send"); 
     if (recv(client_sock, arro, sizeof(arro), 0) < 0) perror("recv");
   } else {
     if (recv(sock, arro, sizeof(arro), 0) < 0) perror("recv");
-    if (send(sock, arr1, sizeof(arr1), 0) < 0) perror("send");
+    if (send(sock, your_placement, sizeof(your_placement), 0) < 0) perror("send");
   }
 
-  //  main loop 2 attack phase (phase-2)
+  //  --- Phase-3 ---
+  printf("\033[1;1H\033[2J"); 
+  //  main loop 2 attack phase 
   while (attacking) {
-    rendering(arrr);
-    attack(arrr, arro);
+    char *attack_coords;
+    printf("Type X and Y co-ordinates of the attack with a space in between: \n");
+    fgets(attack_coords, sizeof(attack_coords), stdin);
+    rendering(reference);
+    attack(reference, attack_coords);
   }
 
   return 0;
