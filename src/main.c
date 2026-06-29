@@ -14,26 +14,25 @@
 
 // main function
 int main() {
-  printf("=== PROGRAM START ===\n");
-  fflush(stdout);
   // --- Phase-1 ---
   printf("\033[1;1H\033[2J");  //clears the terminal screen
   // initialization of the connection 
   char room;
   do {
+    char buf[4];
     printf("type h for host or j for join.(lower case)\n");
-    scanf(" %c", &room);
+    fgets(buf, sizeof(buf), stdin);
+    sscanf(buf, "%c", &room);
     if (room == 'h') host_init();
     else if (room == 'j') join_init();
     else printf("Type a valid character\n");
   } while (room != 'j' && room != 'h');
 
   // variables
-  int turn = 0;
+  int turn;
   int attacking = 1;
   int placing = 1;
-  char move;
-  char arro[14][14];
+  char opponent_placement[14][14];
 
   // creating your board and board for reference on which you attack
   char your_placement[14][14];
@@ -57,21 +56,34 @@ int main() {
   // sending your and fetching opponent ship placement
   if (room == 'h') {
     if (send(client_sock, your_placement, sizeof(your_placement), 0) < 0) perror("send"); 
-    if (recv(client_sock, arro, sizeof(arro), 0) < 0) perror("recv");
+    if (recv(client_sock, opponent_placement, sizeof(opponent_placement), 0) < 0) perror("recv");
   } else {
-    if (recv(sock, arro, sizeof(arro), 0) < 0) perror("recv");
+    if (recv(sock, opponent_placement, sizeof(opponent_placement), 0) < 0) perror("recv");
     if (send(sock, your_placement, sizeof(your_placement), 0) < 0) perror("send");
   }
 
   //  --- Phase-3 ---
   printf("\033[1;1H\033[2J"); 
   //  main loop 2 attack phase 
+  if (room=='h')turn=1;
+  else turn=0;
+
   while (attacking) {
-    char *attack_coords;
-    printf("Type X and Y co-ordinates of the attack with a space in between: \n");
-    fgets(attack_coords, sizeof(attack_coords), stdin);
-    rendering(reference);
-    attack(reference, attack_coords);
+    if(turn){
+      attack(reference, &turn);
+      turn++;
+      if (room == 'h') {
+	if (send(client_sock, &turn, sizeof(turn), 0) < 0) perror("send"); 
+      } else{
+	if (send(sock, &turn, sizeof(turn), 0) < 0) perror("send");
+      }
+    } else{
+	if(room=='h'){
+	  if (recv(client_sock, &turn, sizeof(turn), 0) < 0) perror("recv");
+	} else{
+	  if (recv(sock, &turn, sizeof(turn), 0) < 0) perror("recv");
+	}
+    }
   }
 
   return 0;

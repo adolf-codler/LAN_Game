@@ -3,6 +3,7 @@
 #include <string.h>
 #include <stdlib.h>
 
+
 void rendering(char arr[14][14]) {
   printf("  ");
   for (int i = 0; i < 14; i++) {
@@ -19,31 +20,25 @@ void rendering(char arr[14][14]) {
 }
 
 void place(char arr[14][14]) {
-printf("ENTERED place()\n");
   // variables and misc.
   char *ships_name[6] = {"WarShip(6)", "BattleShip(5)", "Submarine(4)", "Ship(3)", "Boat(2)", "Boat(2)"};
   int ships_size[6] = {6, 5, 4, 3, 2, 2};
-  printf("Type X, Y co-ordinates and orientation for all the ships with a space in between: \n");
   char *error="";
   for (int i = 0; i < 6; i++) {
-printf("loop i = %d\n", i);
+    printf("\033[1;1H\033[2J"); 
     if(error[0]!='\0') printf("%s \n",error);
     error = "";
     rendering(arr);
+    printf("Type X, Y co-ordinates and orientation of %s: \n",ships_name[i]);
 
     // getting placement
     char place_coords[128];
 if (fgets(place_coords, sizeof(place_coords), stdin) == NULL) {
     perror("fgets");
-    printf("EOF = %d, ERR = %d\n", feof(stdin), ferror(stdin));
-    exit(1);
 }
-
-printf("Got: '%s'\n", place_coords);
     int a, b;
     char orientation;
-int n = sscanf(place_coords, "%d %d %c", &a, &b, &orientation);
-printf("n=%d a=%d b=%d orientation=%c\n", n, a, b, orientation);
+    int n = sscanf(place_coords, "%d %d %c", &a, &b, &orientation);
 
     // validating inputs
     if (a < 0 || a >= 14 || b < 0 || b >= 14 ) {
@@ -85,24 +80,29 @@ printf("n=%d a=%d b=%d orientation=%c\n", n, a, b, orientation);
         }
         arr[b][j] = 'O';
       }
-
     } 
   }
 }
 
-void attack(char arr_ref[14][14], char* coords) {
-  int a, b;
-  sscanf(coords, "%d %d", &a, &b);
+void attack(char arr_ref[14][14], int *turn) {
+  while(*turn){
+    printf("\033[1;1H\033[2J"); 
+    rendering(arr_ref);
+    char attack_coords[10];
+    printf("Type X and Y co-ordinates of the attack with a space in between: \n");
+    fgets(attack_coords, sizeof(attack_coords), stdin);
+    int a, b;
+    sscanf(attack_coords, "%d %d", &a, &b);
 
-  if (a < 0 || a >= 14 || b < 0 || b >= 14) {
-    printf("Invalid coordinates. Try again.\n");
-    return;
-  }
-  if (b+a == 'O') {
-    printf("Its a HIT!\n");
-    arr_ref[b][a] = '+';
-  } else {
-    printf("Its as MISS!\n");
-    arr_ref[b][a] = 'x';
+    if (a < 0 || a >= 14 || b < 0 || b >= 14) printf("Invalid coordinates. Try again.\n"); 
+    if(arr_ref[b][a] == 'x' ||arr_ref[b][a] == '+') printf("Already attacked. Choose a different location \n");
+    if (arr_ref[b][a] == 'O') {
+      printf("Its a HIT!\n");
+      arr_ref[b][a] = '+';
+    } else {
+      printf("Its as MISS!\n");
+      arr_ref[b][a] = 'x';
+      *turn =0;
+    }
   }
 }
