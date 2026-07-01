@@ -56,9 +56,17 @@ int main() {
   // sending your and fetching opponent ship placement
   if (room == 'h') {
     if (send(client_sock, your_placement, sizeof(your_placement), 0) < 0) perror("send"); 
-    if (recv(client_sock, opponent_placement, sizeof(opponent_placement), 0) < 0) perror("recv");
+    int bytes = recv(client_sock, opponent_placement, sizeof(opponent_placement), 0);
+    if (bytes <= 0) {
+      printf("Failed to receive opponent's placement. Exiting.\n");
+      return 1;
+    }
   } else {
-    if (recv(sock, opponent_placement, sizeof(opponent_placement), 0) < 0) perror("recv");
+    int bytes = recv(sock, opponent_placement, sizeof(opponent_placement), 0);
+    if (bytes <= 0) {
+      printf("Failed to receive opponent's placement. Exiting.\n");
+      return 1;
+    }
     if (send(sock, your_placement, sizeof(your_placement), 0) < 0) perror("send");
   }
 
@@ -69,20 +77,42 @@ int main() {
   else turn=0;
 
   while (attacking) {
-    if(turn){
-      attack(reference, &turn);
-      turn++;
-      if (room == 'h') {
-	if (send(client_sock, &turn, sizeof(turn), 0) < 0) perror("send"); 
-      } else{
-	if (send(sock, &turn, sizeof(turn), 0) < 0) perror("send");
+    if (turn) {
+      attack(reference, opponent_placement, &turn);
+      if (turn == 2) {
+        printf("YOU WIN!\n");
+        int next_turn = -1;
+        if (room == 'h') {
+          if (send(client_sock, &next_turn, sizeof(next_turn), 0) < 0) perror("send");
+        } else {
+          if (send(sock, &next_turn, sizeof(next_turn), 0) < 0) perror("send");
+        }
+        attacking = 0;
+        break;
       }
-    } else{
-	if(room=='h'){
-	  if (recv(client_sock, &turn, sizeof(turn), 0) < 0) perror("recv");
-	} else{
-	  if (recv(sock, &turn, sizeof(turn), 0) < 0) perror("recv");
-	}
+      int next_turn = 1;
+      if (room == 'h') {
+        if (send(client_sock, &next_turn, sizeof(next_turn), 0) < 0) perror("send"); 
+      } else {
+        if (send(sock, &next_turn, sizeof(next_turn), 0) < 0) perror("send");
+      }
+    } else {
+      int bytes_received;
+      if (room == 'h') {
+        bytes_received = recv(client_sock, &turn, sizeof(turn), 0);
+      } else {
+        bytes_received = recv(sock, &turn, sizeof(turn), 0);
+      }
+      if (bytes_received <= 0) {
+        printf("Opponent disconnected. Exiting.\n");
+        attacking = 0;
+        break;
+      }
+      if (turn == -1) {
+        printf("YOU LOSE!\n");
+        attacking = 0;
+        break;
+      }
     }
   }
 

@@ -4,7 +4,7 @@
 
 void rendering(char arr[14][14]);
 void place(char arr[14][14]);
-void attack(char arr[14][14], int *turn);
+void attack(char arr[14][14], char opp[14][14], int *turn);
 
 typedef struct {
   int x;

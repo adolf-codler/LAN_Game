@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <unistd.h>
 
 
 void rendering(char arr[14][14]) {
@@ -38,7 +39,11 @@ if (fgets(place_coords, sizeof(place_coords), stdin) == NULL) {
 }
     int a, b;
     char orientation;
-    int n = sscanf(place_coords, "%d %d %c", &a, &b, &orientation);
+    if (sscanf(place_coords, "%d %d %c", &a, &b, &orientation) != 3) {
+      error = "Invalid format. Use: X Y Orientation (e.g., 5 5 h).";
+      i--;
+      continue;
+    }
 
     // validating inputs
     if (a < 0 || a >= 14 || b < 0 || b >= 14 ) {
@@ -53,7 +58,12 @@ if (fgets(place_coords, sizeof(place_coords), stdin) == NULL) {
     }
 
     // checking boundaries
-    if ((ships_size[i] + a - 1) > 13 || (ships_size[i] + b - 1) > 13) {
+    if (orientation == 'v' && (ships_size[i] + b - 1) > 13) {
+      error = "Ship is out of boundaries. Try again.";
+      i--;
+      continue;
+    }
+    if (orientation == 'h' && (ships_size[i] + a - 1) > 13) {
       error = "Ship is out of boundaries. Try again.";
       i--;
       continue;
@@ -61,30 +71,38 @@ if (fgets(place_coords, sizeof(place_coords), stdin) == NULL) {
 
     // placing
     if (orientation == 'v') {
-      for (int j = b; j < (ships_size[i] + b); j++) {
+      int j;
+      for (j = b; j < (ships_size[i] + b); j++) {
         // checking overlap
         if (arr[j][a] == 'O') {
           error = "A ship is already there. Try again.";
           i--;
           break;
         }
-        arr[j][a] = 'O';
       }
+      if (j < (ships_size[i] + b)) {
+        continue;
+      }
+      for (j = b; j < (ships_size[i] + b); j++) arr[j][a] = 'O';
 
     } else{
-      for (int j = a; j < (ships_size[i] + a); j++) {
+      int j;
+      for (j = a; j < (ships_size[i] + a); j++) {
         if (arr[b][j] == 'O') {
           error = "A ship is already there. Try again.";
           i--;
           break;
         }
-        arr[b][j] = 'O';
       }
+      if (j < (ships_size[i] + a)) {
+        continue;
+      }
+      for (j = a; j < (ships_size[i] + a); j++) arr[b][j] = 'O';
     } 
   }
 }
 
-void attack(char arr_ref[14][14], int *turn) {
+void attack(char arr_ref[14][14], char arr_opp[14][14], int *turn) {
   while(*turn){
     printf("\033[1;1H\033[2J"); 
     rendering(arr_ref);
@@ -92,17 +110,45 @@ void attack(char arr_ref[14][14], int *turn) {
     printf("Type X and Y co-ordinates of the attack with a space in between: \n");
     fgets(attack_coords, sizeof(attack_coords), stdin);
     int a, b;
-    sscanf(attack_coords, "%d %d", &a, &b);
+    if(sscanf(attack_coords, "%d %d", &a, &b)!=2){
+      printf("Give Correct Input \n");
+      continue;
+    }
 
-    if (a < 0 || a >= 14 || b < 0 || b >= 14) printf("Invalid coordinates. Try again.\n"); 
-    if(arr_ref[b][a] == 'x' ||arr_ref[b][a] == '+') printf("Already attacked. Choose a different location \n");
-    if (arr_ref[b][a] == 'O') {
+    if (a < 0 || a >= 14 || b < 0 || b >= 14){
+      printf("Invalid coordinates. Try again.\n"); 
+      continue;
+    }
+    if(arr_opp[b][a] == 'x' ||arr_opp[b][a] == '+'){
+      printf("Already attacked. Choose a different location \n");
+      continue;
+    }
+    if (arr_opp[b][a] == 'O') {
       printf("Its a HIT!\n");
       arr_ref[b][a] = '+';
+      arr_opp[b][a] = '+';
+      
+      int win = 1;
+      for (int r = 0; r < 14; r++) {
+        for (int c = 0; c < 14; c++) {
+          if (arr_opp[r][c] == 'O') {
+            win = 0;
+            break;
+          }
+        }
+        if (!win) break;
+      }
+      if (win) {
+        *turn = 2;
+        break;
+      }
+      sleep(1);
     } else {
-      printf("Its as MISS!\n");
+      printf("Its a MISS!\n");
       arr_ref[b][a] = 'x';
-      *turn =0;
+      arr_opp[b][a] = 'x';
+      *turn = 0;
+      sleep(1);
     }
   }
 }
